@@ -1,6 +1,9 @@
 #include "DHT.h"
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
+#include <Arduino.h>
+#include <Ds1302.h>
+
 
 #define DHTPIN 7     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
@@ -10,8 +13,20 @@
 #define TIME_A 8   //pulsacion corta
 #define TIME_B 40  // pulsacion larga
 
+const static char* WeekDays[] =
+{
+    "Lun", //1
+    "Mar", //2
+    "Mie", //3
+    "Jue", //4
+    "Vie", //5
+    "Sab", //6
+    "Dom"  //7
+};
+
 DHT dht(DHTPIN, DHTTYPE);
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+Ds1302 rtc(A3, A5, A4);
 
 float sensorValue = 0;
 int counter = 0;
@@ -40,6 +55,12 @@ void setup() {
   EEPROM.get(2, valorTemperatura);
   tiempoEncendido = EEPROM.read(5);
   tiempoApagado = EEPROM.read(6);
+
+  Ds1302::DateTime now;
+  rtc.getDateTime(&now);
+  rtc.init();
+  delay(2000);
+
   leer_temperatura();
 }
 
@@ -115,6 +136,10 @@ void loop() {
 
 void leer_temperatura()
 {
+  
+  Ds1302::DateTime now;
+  rtc.getDateTime(&now);
+  
   lcd.setCursor(0, 0);
   h = dht.readHumidity();
   t = dht.readTemperature();
@@ -129,9 +154,11 @@ void leer_temperatura()
   lcd.print(t);
   lcd.print("C  ");
   lcd.setCursor(10, 0);
-  lcd.print("H:");
-  lcd.print(h);
-  lcd.print("% ");
+  lcd.print(now.hour);
+  lcd.print(":");
+  lcd.setCursor(13, 0);
+  if (now.minute < 10) lcd.print("0");
+  lcd.print(now.minute);
 
   Serial.print("Humidity: ");
   Serial.print(h);
@@ -140,6 +167,34 @@ void leer_temperatura()
   Serial.print(t);
   Serial.print(" *C ");
   Serial.println(" ");
+  if(now.hour >= 12 && now.dow >= 6)
+  {
+    lcd.clear();
+    lcd.print("No se Trabaja");
+    while(1)
+    {
+      Ds1302::DateTime now;
+      rtc.getDateTime(&now);
+      lcd.setCursor(0, 1);
+      lcd.print(now.hour);
+      lcd.print(":");
+      lcd.setCursor(3, 1);
+      if (now.minute < 10) lcd.print("0");
+      lcd.print(now.minute);
+      lcd.print(":");
+      lcd.setCursor(6, 1);
+      if (now.second < 10) lcd.print("0");
+      lcd.print(now.second);
+      lcd.setCursor(13, 1);
+      lcd.print(WeekDays[now.dow - 1]);
+      delay(1000);
+      if(now.hour <= 12 && now.dow <= 6)
+      {
+        lcd.clear();
+        break;
+      }
+    }    
+  }
 }
 
 void modo_menu()
