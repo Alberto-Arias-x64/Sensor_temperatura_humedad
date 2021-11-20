@@ -11,7 +11,7 @@
 #define BUTTON 6
 #define ANALOG A0
 #define TIME_A 8   //pulsacion corta
-#define TIME_B 40  // pulsacion larga
+#define TIME_B 35  // pulsacion larga
 
 const static char* WeekDays[] =
 {
@@ -66,7 +66,7 @@ void setup() {
 
 void loop() {
   counter = counter + 100;
-  delay(100);
+  delay(100); //100
 
   sensorValue = analogRead(ANALOG);
   button = digitalRead(BUTTON);
@@ -92,11 +92,23 @@ void loop() {
 
   if (button == 1)
   {
-    counter_b++;
-    if (counter_b == TIME_B)
-    {
-      counter_b = 0;
-      modo_menu();
+    while(1){
+      delay(100); //100
+      button = digitalRead(BUTTON);
+      counter_b++;
+      if (button == 0 || counter_b == TIME_B)
+      {
+        if (counter_b == TIME_B)
+        {
+          counter_b = 0;
+          modo_menu();
+        }
+        else
+        {
+          counter_b = 0;
+          modo_apagado();
+        }
+      }
     }
   }
   else
@@ -110,7 +122,7 @@ void loop() {
     counter = 0;
   }
 
-  while(modo == 1 && t > valorTemperatura && button == 0)
+  while(modo == 1 && t > valorTemperatura)
   {
     button = digitalRead(BUTTON);
     lcd.setCursor(0, 1);
@@ -120,8 +132,29 @@ void loop() {
     delay(tiempoApagado*1000);
     digitalWrite(RELE, HIGH);
     leer_temperatura();
+    if (button == 1)
+    {
+      while(1){
+        delay(100); //100
+        button = digitalRead(BUTTON);
+        counter_b++;
+        if (button == 0 || counter_b == TIME_B)
+        {
+          if (counter_b == TIME_B)
+          {
+            counter_b = 0;
+            modo_menu();
+          }
+          else
+          {
+            counter_b = 0;
+            modo_apagado();
+          }
+        }
+      }
+    }
   }
-    while(modo == 2 && t < valorTemperatura && button == 0)
+    while(modo == 2 && t < valorTemperatura)
   {
     button = digitalRead(BUTTON);
     lcd.setCursor(0, 1);
@@ -131,6 +164,27 @@ void loop() {
     delay(tiempoApagado*1000);
     digitalWrite(RELE, HIGH);
     leer_temperatura();
+    if (button == 1)
+    {
+      while(1){
+        delay(100); //100
+        button = digitalRead(BUTTON);
+        counter_b++;
+        if (button == 0 || counter_b == TIME_B)
+        {
+          if (counter_b == TIME_B)
+          {
+            counter_b = 0;
+            modo_menu();
+          }
+          else
+          {
+            counter_b = 0;
+            modo_apagado();
+          }
+        }
+      }
+    }
   }
 }
 
@@ -147,7 +201,7 @@ void leer_temperatura()
   if (isnan(h) || isnan(t)) {
     lcd.setCursor(0, 0);
     lcd.print("Falla de sensor");
-    Serial.println("Failed to read from DHT sensor!");
+    //Serial.println("Failed to read from DHT sensor!");
     return;
   }
   lcd.print("T:");
@@ -188,7 +242,7 @@ void leer_temperatura()
       lcd.setCursor(13, 1);
       lcd.print(WeekDays[now.dow - 1]);
       delay(1000);
-      if(now.hour <= 12 && now.dow <= 6)
+      if(now.hour <= 12 && now.dow == 1)
       {
         lcd.clear();
         break;
@@ -448,6 +502,31 @@ void modo_menu()
     else
     {
       counter_b = 0;
+    }
+  }
+}
+
+void modo_apagado()
+{
+    while(1)
+  {
+    counter = counter + 100;
+    delay(100);//100
+    sensorValue = analogRead(ANALOG);
+    button = digitalRead(BUTTON);
+    lcd.setCursor(0, 1);
+    lcd.print("!!! Apagado !!!");
+    if (button == 1)
+    {
+      while(1){
+        button = digitalRead(BUTTON);
+        if (button == 0){loop();}
+      }
+    }
+    if (counter >= 2100)
+    {
+      leer_temperatura();
+      counter = 0;
     }
   }
 }
